@@ -118,6 +118,18 @@ economy: 61.77 %
 }
 ```
 
+### Table
+
+```
++---------------+-------------------+----------------+------------+--------------------+------------------+---------------+
+| instance type | Availability Zone | OnDemand Price | Spot Price | Percentage Economy | Price per Memory | Price per ECU |
++---------------+-------------------+----------------+------------+--------------------+------------------+---------------+
+|   m5.xlarge   |     us-east-1f    |     0.192      |   0.0734   |       61.77        |    0.0045875     |   0.0045875   |
+|   m5.xlarge   |     us-east-1f    |     0.192      |   0.0734   |       61.77        |    0.0045875     |   0.0045875   |
+|   m5.xlarge   |     us-east-1f    |     0.192      |   0.0734   |       61.77        |    0.0045875     |   0.0045875   |
++---------------+-------------------+----------------+------------+--------------------+------------------+---------------+
+```
+
 ## Interface
 
 ```
@@ -135,7 +147,8 @@ optional arguments:
                         (default: Linux/UNIX)
   --mode {show,compare}
                         (default: show)
-  --output {text,json}  (default: text)
+  --output {text,json,table}
+                        (default: text)
   --price-type {all,ecu,memory,economy}
                         (default: all)
   --instance-type INSTANCE_TYPE [INSTANCE_TYPE ...]

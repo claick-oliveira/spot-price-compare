@@ -4,8 +4,9 @@ import boto3
 import json
 import re
 import datetime
-from decimal import Decimal
 import argparse
+from decimal import Decimal
+from prettytable import PrettyTable
 
 parser = argparse.ArgumentParser(description='Compare the Instance\'s actual price and spot price.',
                                  usage='''\n\
@@ -15,7 +16,7 @@ parser = argparse.ArgumentParser(description='Compare the Instance\'s actual pri
 parser.add_argument('--region', type=str, help='Region\'s code, like us-east-1', required=True)
 parser.add_argument('--product-type', type=str, default='Linux/UNIX', help='(default: %(default)s)', choices=['Linux/UNIX', 'SUSE Linux', 'Windows', 'Linux/UNIX (Amazon VPC)', 'SUSE Linux (Amazon VPC)', 'Windows (Amazon VPC)'])
 parser.add_argument('--mode', type=str, default='show', help='(default: %(default)s)', choices=['show', 'compare'])
-parser.add_argument('--output', type=str, default='text', help='(default: %(default)s)', choices=['text', 'json'])
+parser.add_argument('--output', type=str, default='text', help='(default: %(default)s)', choices=['text', 'json', 'table'])
 parser.add_argument('--price-type', type=str, default='all', help='(default: %(default)s)', choices=['all', 'ecu', 'memory', 'economy'])
 parser.add_argument('--instance-type', nargs='+', help='(t1.micro or t1.micro t2.micro ...)', default=[], required=True)
 args = parser.parse_args()
@@ -29,6 +30,8 @@ betterECUPrice = {}
 betterECUPrice['pricePerEcu'] = 100
 betterMemoryPrice = {}
 betterMemoryPrice['pricePerMemory'] = 100
+table = PrettyTable()
+table.field_names = ['instance type', 'Availability Zone', 'OnDemand Price', 'Spot Price', 'Percentage Economy', 'Price per Memory', 'Price per ECU']
 
 productTypes = {
   'Linux/UNIX': {
@@ -200,6 +203,8 @@ for instanceType in args.instance_type:
             print('--- %s price --- \ninstance type: %s \nregion: %s \nzone: %s \nvCPU: %s \necu: %s \nmemory: %s \nOnDemand price: %s \nSpot price: %s \neconomy: %s %%'
             % (instanceType, payload['type'], regions[args.region]['location'], payload['AvailabilityZone'], payload['cpu'], payload['ecu'], payload['memory'], payload['actualPrice'], payload['spotPrice'], payload['economy']))
             print('')
+          elif args.output == 'table':
+            table.add_row([payload['type'], payload['AvailabilityZone'], payload['actualPrice'], payload['spotPrice'], payload['economy'], payload['pricePerMemory'], payload['pricePerEcu']])
           else:
             priceList[instanceType][spotPrice['AvailabilityZone']] = payload
 
@@ -227,5 +232,12 @@ elif args.mode == 'compare' and args.output == 'json':
     if args.price_type == 'ecu' or args.price_type == 'all':
       json_output['ecu'] = betterECUPrice
     print(json.dumps(json_output,sort_keys=True))
+elif args.mode == 'compare' and args.output == 'table':
+  table.add_row([betterPrice['type'], betterPrice['AvailabilityZone'], betterPrice['actualPrice'], betterPrice['spotPrice'], betterPrice['economy'], betterPrice['pricePerMemory'], betterPrice['pricePerEcu']])
+  table.add_row([betterMemoryPrice['type'], betterMemoryPrice['AvailabilityZone'], betterMemoryPrice['actualPrice'], betterMemoryPrice['spotPrice'], betterMemoryPrice['economy'], betterMemoryPrice['pricePerMemory'], betterMemoryPrice['pricePerEcu']])
+  table.add_row([betterECUPrice['type'], betterECUPrice['AvailabilityZone'], betterECUPrice['actualPrice'], betterECUPrice['spotPrice'], betterECUPrice['economy'], betterECUPrice['pricePerMemory'], betterECUPrice['pricePerEcu']])
+  print(table.get_string())
+elif args.mode == 'show' and args.output == 'table':
+  print(table.get_string(sortby="Percentage Economy", reversesort=True))
 elif args.mode == 'show' and args.output == 'json':
   print(json.dumps(priceList,sort_keys=True))
