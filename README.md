@@ -16,7 +16,7 @@ You need this things to run the script:
 And install the modules with pip:
 
 ```
-pip install boto3
+pip install -r requirements.txt
 ```
 
 ## Usage
